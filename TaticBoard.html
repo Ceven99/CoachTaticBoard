@@ -18,6 +18,7 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      touch-action: manipulation;
     }
 
     nav {
@@ -236,6 +237,7 @@
           #539f42 5.55%,
           #539f42 11.1%
         );
+      touch-action: none;
     }
 
     .pitch::before {
@@ -272,6 +274,7 @@
     .draw-layer {
       pointer-events: none;
       z-index: 3;
+      touch-action: none;
     }
 
     .draw-layer.pen-active {
@@ -293,6 +296,8 @@
       box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
       cursor: grab;
       user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
       transform: translate(-50%, -50%);
       z-index: 5;
       text-align: center;
@@ -302,6 +307,7 @@
       overflow: hidden;
       word-break: break-word;
       white-space: pre-line;
+      touch-action: none;
     }
 
     .player.team1 {
@@ -807,12 +813,21 @@
       }, 3000);
     });
 
-    document.addEventListener("mouseup", () => {
+    navEraserBtn.addEventListener("touchstart", () => {
+      eraserHoldTimeout = setTimeout(() => {
+        eraserSizeInput.style.display = "inline-block";
+      }, 3000);
+    }, { passive: true });
+
+    function clearEraserHold() {
       if (eraserHoldTimeout) {
         clearTimeout(eraserHoldTimeout);
         eraserHoldTimeout = null;
       }
-    });
+    }
+
+    document.addEventListener("mouseup", clearEraserHold);
+    document.addEventListener("touchend", clearEraserHold);
 
     eraserSizeInput.addEventListener("input", (e) => {
       const value = Number(e.target.value);
@@ -824,12 +839,36 @@
     drawLayer.setAttribute("viewBox", "0 0 105 68");
     drawLayer.setAttribute("preserveAspectRatio", "none");
 
+    function getEventPosition(e) {
+      if (e.touches && e.touches.length > 0) {
+        return {
+          clientX: e.touches[0].clientX,
+          clientY: e.touches[0].clientY
+        };
+      }
+
+      if (e.changedTouches && e.changedTouches.length > 0) {
+        return {
+          clientX: e.changedTouches[0].clientX,
+          clientY: e.changedTouches[0].clientY
+        };
+      }
+
+      return {
+        clientX: e.clientX,
+        clientY: e.clientY
+      };
+    }
+
     function getSvgCoords(e) {
+      const pos = getEventPosition(e);
       const rect = pitch.getBoundingClientRect();
       return {
-        x: ((e.clientX - rect.left) / rect.width) * 105,
-        y: ((e.clientY - rect.top) / rect.height) * 68,
-        pitchRect: rect
+        x: ((pos.clientX - rect.left) / rect.width) * 105,
+        y: ((pos.clientY - rect.top) / rect.height) * 68,
+        pitchRect: rect,
+        clientX: pos.clientX,
+        clientY: pos.clientY
       };
     }
 
@@ -877,7 +916,7 @@
       }
     }
 
-    drawLayer.addEventListener("mousedown", (e) => {
+    function startDrawInteraction(e) {
       if (!isPenMode && !isEraserMode && !activeShapeMode) return;
       e.preventDefault();
 
@@ -904,16 +943,16 @@
         drawLayer.appendChild(previewShape);
         updateShapeElement(previewShape, activeShapeMode, x, y, x, y);
       }
-    });
+    }
 
-    document.addEventListener("mousemove", (e) => {
-      const { x, y, pitchRect } = getSvgCoords(e);
+    function moveDrawInteraction(e) {
+      const { x, y, pitchRect, clientX, clientY } = getSvgCoords(e);
 
       if (!isDrawing && !isErasing && !isShapeDrawing) {
-        if (isEraserMode) {
+        if (isEraserMode && !e.touches) {
           eraserCursor.style.display = "block";
-          eraserCursor.style.left = `${e.clientX}px`;
-          eraserCursor.style.top = `${e.clientY}px`;
+          eraserCursor.style.left = `${clientX}px`;
+          eraserCursor.style.top = `${clientY}px`;
           const pixelRadius = (eraserRadius / 105) * pitchRect.width;
           const diameterPx = pixelRadius * 2;
           eraserCursor.style.width = `${diameterPx}px`;
@@ -931,18 +970,18 @@
         updateShapeElement(previewShape, activeShapeMode, shapeStart.x, shapeStart.y, x, y);
       }
 
-      if (isEraserMode) {
+      if (isEraserMode && !e.touches) {
         eraserCursor.style.display = "block";
-        eraserCursor.style.left = `${e.clientX}px`;
-        eraserCursor.style.top = `${e.clientY}px`;
+        eraserCursor.style.left = `${clientX}px`;
+        eraserCursor.style.top = `${clientY}px`;
         const pixelRadius = (eraserRadius / 105) * pitchRect.width;
         const diameterPx = pixelRadius * 2;
         eraserCursor.style.width = `${diameterPx}px`;
         eraserCursor.style.height = `${diameterPx}px`;
       }
-    });
+    }
 
-    document.addEventListener("mouseup", () => {
+    function endDrawInteraction() {
       isDrawing = false;
       isErasing = false;
       currentPath = null;
@@ -952,7 +991,17 @@
         previewShape = null;
         shapeStart = null;
       }
-    });
+    }
+
+    drawLayer.addEventListener("mousedown", startDrawInteraction);
+    drawLayer.addEventListener("touchstart", startDrawInteraction, { passive: false });
+
+    document.addEventListener("mousemove", moveDrawInteraction);
+    document.addEventListener("touchmove", moveDrawInteraction, { passive: false });
+
+    document.addEventListener("mouseup", endDrawInteraction);
+    document.addEventListener("touchend", endDrawInteraction);
+    document.addEventListener("touchcancel", endDrawInteraction);
 
     function openModal(player) {
       if (player.dataset.team === "ball") return;
@@ -1071,34 +1120,54 @@
       if (!colorDropdown.contains(e.target)) colorDropdown.classList.remove("open");
     });
 
+    function startPlayerInteraction(player, e) {
+      if (isPenMode || isEraserMode || activeShapeMode) return;
+      e.preventDefault();
+
+      const pos = getEventPosition(e);
+      draggingPlayer = player;
+      moved = false;
+
+      mouseDownX = pos.clientX;
+      mouseDownY = pos.clientY;
+
+      const rect = player.getBoundingClientRect();
+      dragOffsetX = pos.clientX - rect.left;
+      dragOffsetY = pos.clientY - rect.top;
+    }
+
+    function handlePlayerTap(player, e) {
+      if (isPenMode || isEraserMode || activeShapeMode) return;
+      e.stopPropagation();
+      if (moved) return;
+
+      if (player.dataset.team === "ball") {
+        selectedPlayer = player;
+        deletePlayerOnlyMode();
+        return;
+      }
+
+      normalEditMode();
+      openModal(player);
+    }
+
     function enablePlayerActions(player) {
       player.addEventListener("mousedown", (e) => {
-        if (isPenMode || isEraserMode || activeShapeMode) return;
-        e.preventDefault();
-        draggingPlayer = player;
-        moved = false;
-
-        mouseDownX = e.clientX;
-        mouseDownY = e.clientY;
-
-        const rect = player.getBoundingClientRect();
-        dragOffsetX = e.clientX - rect.left;
-        dragOffsetY = e.clientY - rect.top;
+        startPlayerInteraction(player, e);
       });
 
+      player.addEventListener("touchstart", (e) => {
+        startPlayerInteraction(player, e);
+      }, { passive: false });
+
       player.addEventListener("click", (e) => {
-        if (isPenMode || isEraserMode || activeShapeMode) return;
-        e.stopPropagation();
-        if (moved) return;
+        handlePlayerTap(player, e);
+      });
 
-        if (player.dataset.team === "ball") {
-          selectedPlayer = player;
-          deletePlayerOnlyMode();
-          return;
+      player.addEventListener("touchend", (e) => {
+        if (!moved) {
+          handlePlayerTap(player, e);
         }
-
-        normalEditMode();
-        openModal(player);
       });
     }
 
@@ -1115,17 +1184,18 @@
       modal.classList.add("active");
     }
 
-    document.addEventListener("mousemove", (e) => {
+    function movePlayerInteraction(e) {
       if (!draggingPlayer) return;
 
-      const diffX = Math.abs(e.clientX - mouseDownX);
-      const diffY = Math.abs(e.clientY - mouseDownY);
+      const pos = getEventPosition(e);
+      const diffX = Math.abs(pos.clientX - mouseDownX);
+      const diffY = Math.abs(pos.clientY - mouseDownY);
       if (diffX > 4 || diffY > 4) moved = true;
 
       const pitchRect = pitch.getBoundingClientRect();
 
-      let x = e.clientX - pitchRect.left - dragOffsetX + draggingPlayer.offsetWidth / 2;
-      let y = e.clientY - pitchRect.top - dragOffsetY + draggingPlayer.offsetHeight / 2;
+      let x = pos.clientX - pitchRect.left - dragOffsetX + draggingPlayer.offsetWidth / 2;
+      let y = pos.clientY - pitchRect.top - dragOffsetY + draggingPlayer.offsetHeight / 2;
 
       const halfW = draggingPlayer.offsetWidth / 2;
       const halfH = draggingPlayer.offsetHeight / 2;
@@ -1137,15 +1207,26 @@
 
       draggingPlayer.style.left = `${x}px`;
       draggingPlayer.style.top = `${y}px`;
-    });
 
-    document.addEventListener("mouseup", () => {
+      if (e.touches) {
+        e.preventDefault();
+      }
+    }
+
+    function endPlayerInteraction() {
       if (draggingPlayer) {
         setTimeout(() => {
           draggingPlayer = null;
         }, 0);
       }
-    });
+    }
+
+    document.addEventListener("mousemove", movePlayerInteraction);
+    document.addEventListener("touchmove", movePlayerInteraction, { passive: false });
+
+    document.addEventListener("mouseup", endPlayerInteraction);
+    document.addEventListener("touchend", endPlayerInteraction);
+    document.addEventListener("touchcancel", endPlayerInteraction);
 
     saveTextBtn.addEventListener("click", () => {
       if (!selectedPlayer) return;
