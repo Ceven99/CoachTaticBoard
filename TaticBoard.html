@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MSc's Tactic Board</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #202b36;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    nav {
+      background: #2d3748;
+      padding: 8px 18px;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 20;
+    }
+
+    nav .logo {
+      font-size: 18px;
+      font-weight: bold;
+      color: #fff;
+      line-height: 1;
+    }
+
+    nav .nav-links {
+      display: flex;
+      gap: 10px;
+      margin-left: auto;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .nav-btn {
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      background: #2d3748;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.15s ease, opacity 0.15s ease;
+      line-height: 1;
+    }
+
+    .nav-btn:hover {
+      background: #4a5568;
+      opacity: 0.95;
+    }
+
+    .nav-btn.nav-danger {
+      background: #e53e3e;
+      color: #fff;
+    }
+
+    .nav-btn.nav-danger:hover {
+      background: #c53030;
+    }
+
+    .nav-btn.active {
+      background: #4a5568;
+      outline: 2px solid #fff;
+    }
+
+    .eraser-size {
+      width: 76px;
+      accent-color: #e53e3e;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      display: none;
+    }
+
+    .eraser-cursor {
+      position: fixed;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #e53e3e;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      display: none;
+      z-index: 60;
+    }
+
+    .dropdown {
+      position: relative;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 190px;
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 10px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+      padding: 6px;
+      display: none;
+      z-index: 100;
+    }
+
+    .dropdown.open .dropdown-menu {
+      display: block;
+    }
+
+    .dropdown-item {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: #fff;
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .dropdown-item:hover {
+      background: #334155;
+    }
+
+    .dropdown-item.danger:hover {
+      background: #7f1d1d;
+    }
+
+    .color-dropdown-menu {
+      right: auto;
+      left: 0;
+      min-width: 172px;
+      padding: 10px;
+    }
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .color-swatch {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.35);
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.12s ease;
+    }
+
+    .color-swatch:hover {
+      transform: scale(1.08);
+      border-color: #fff;
+    }
+
+    .color-swatch.active {
+      border-color: #fff;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.18);
+    }
+
+    .color-trigger {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      background: #2d3748;
+    }
+
+    .color-trigger:hover {
+      background: #4a5568;
+    }
+
+    .color-preview {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.75);
+      display: inline-block;
+    }
+
+    .app {
+      flex: 1;
+      width: 100%;
+      padding: 10px 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 0;
+    }
+
+    .pitch-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    .pitch {
+      position: relative;
+      width: min(98vw, 1600px);
+      aspect-ratio: 105 / 72;
+      max-height: calc(100vh - 72px);
+      overflow: hidden;
+      border-radius: 6px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.32);
+      background:
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.08)),
+        repeating-linear-gradient(
+          90deg,
+          #418f35 0%,
+          #418f35 5.55%,
+          #539f42 5.55%,
+          #539f42 11.1%
+        );
+    }
+
+    .pitch::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to right, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.02)),
+        repeating-linear-gradient(
+          0deg,
+          rgba(255, 255, 255, 0.012) 0px,
+          rgba(255, 255, 255, 0.012) 1px,
+          transparent 1px,
+          transparent 4px
+        ),
+        radial-gradient(circle at center, rgba(255, 255, 255, 0.03), transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .pitch-svg,
+    .draw-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .pitch-svg {
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .draw-layer {
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .draw-layer.pen-active {
+      pointer-events: auto;
+      cursor: crosshair;
+      z-index: 10;
+    }
+
+    .player {
+      position: absolute;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 700;
+      border: 3px solid #000;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+      cursor: grab;
+      user-select: none;
+      transform: translate(-50%, -50%);
+      z-index: 5;
+      text-align: center;
+      font-size: 11px;
+      line-height: 1.05;
+      padding: 4px;
+      overflow: hidden;
+      word-break: break-word;
+      white-space: pre-line;
+    }
+
+    .player.team1 {
+      background: #facc15;
+      color: #111;
+    }
+
+    .player.team2 {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .player.ball {
+      width: 30px;
+      height: 30px;
+      font-size: 0;
+      padding: 0;
+      background: radial-gradient(circle at 35% 30%, #ffffff 0 20%, #e6e6e6 21% 100%);
+      border: 2px solid #111827;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .player.ball::before,
+    .player.ball::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .player.ball::before {
+      background:
+        radial-gradient(circle at 50% 50%, #111827 0 15%, transparent 16%),
+        radial-gradient(circle at 50% 12%, #111827 0 7%, transparent 8%),
+        radial-gradient(circle at 20% 35%, #111827 0 7%, transparent 8%),
+        radial-gradient(circle at 80% 35%, #111827 0 7%, transparent 8%),
+        radial-gradient(circle at 30% 78%, #111827 0 7%, transparent 8%),
+        radial-gradient(circle at 70% 78%, #111827 0 7%, transparent 8%);
+      opacity: 0.95;
+    }
+
+    .player.ball::after {
+      background: radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.95) 0 10%, transparent 11%);
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-box {
+      width: 90%;
+      max-width: 380px;
+      background: #1e293b;
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .modal-box h3 {
+      margin-bottom: 12px;
+      font-size: 20px;
+    }
+
+    .modal-box input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid #64748b;
+      outline: none;
+      font-size: 15px;
+      margin-bottom: 14px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .modal-actions button {
+      border: none;
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .save-btn {
+      background: #22c55e;
+      color: #fff;
+    }
+
+    .cancel-btn {
+      background: #475569;
+      color: #fff;
+    }
+
+    .delete-btn {
+      background: #dc2626;
+      color: #fff;
+      margin-right: auto;
+    }
+
+    @media (max-width: 980px) {
+      nav {
+        padding: 8px 12px;
+      }
+
+      .app {
+        padding: 8px;
+      }
+
+      .pitch {
+        width: 100%;
+        max-width: 100%;
+        max-height: calc(100vh - 84px);
+      }
+
+      .player {
+        width: 48px;
+        height: 48px;
+        font-size: 10px;
+      }
+
+      .player.ball {
+        width: 28px;
+        height: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <span class="logo">MSc's Tactic Board</span>
+    <div class="nav-links">
+      <div class="dropdown" id="colorDropdown">
+        <button class="color-trigger" id="navColorMenu" title="Select color" aria-label="Select color">
+          <span class="color-preview" id="colorPreview"></span>
+        </button>
+        <div class="dropdown-menu color-dropdown-menu">
+          <div class="color-grid">
+            <button class="color-swatch active" data-color="#111111" style="background:#111111" title="Black" aria-label="Black"></button>
+            <button class="color-swatch" data-color="#ffffff" style="background:#ffffff" title="White" aria-label="White"></button>
+            <button class="color-swatch" data-color="#facc15" style="background:#facc15" title="Yellow" aria-label="Yellow"></button>
+            <button class="color-swatch" data-color="#16a34a" style="background:#16a34a" title="Green" aria-label="Green"></button>
+            <button class="color-swatch" data-color="#2563eb" style="background:#2563eb" title="Blue" aria-label="Blue"></button>
+            <button class="color-swatch" data-color="#dc2626" style="background:#dc2626" title="Red" aria-label="Red"></button>
+          </div>
+        </div>
+      </div>
+
+      <button class="nav-btn" id="navPen">Pen</button>
+
+      <div class="dropdown" id="shapeDropdown">
+        <button class="nav-btn" id="navShapeMenu">Shape ▾</button>
+        <div class="dropdown-menu">
+          <button class="dropdown-item" id="navRect">Rectangle</button>
+          <button class="dropdown-item" id="navTriangle">Triangle</button>
+          <button class="dropdown-item" id="navCircleShape">Circle</button>
+        </div>
+      </div>
+
+      <button class="nav-btn" id="navEraser">Eraser</button>
+      <input type="range" id="eraserSize" class="eraser-size" min="1" max="10" value="3" />
+      <button class="nav-btn" id="navAddTeam1">Team1</button>
+      <button class="nav-btn" id="navAddTeam2">Team2</button>
+      <button class="nav-btn" id="navAddBall">Add Ball</button>
+
+      <div class="dropdown" id="resetDropdown">
+        <button class="nav-btn nav-danger" id="navResetMenu">Reset Board ▾</button>
+        <div class="dropdown-menu">
+          <button class="dropdown-item danger" id="navClearBoard">Clear Board</button>
+          <button class="dropdown-item" id="navResetStart">Reset to Start State</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="app">
+    <section class="pitch-wrapper">
+      <div class="pitch" id="pitch">
+        <svg class="pitch-svg" viewBox="0 0 105 68" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <clipPath id="leftArcClip">
+              <rect x="17.5" y="0" width="87.5" height="68"></rect>
+            </clipPath>
+            <clipPath id="rightArcClip">
+              <rect x="0" y="0" width="87.5" height="68"></rect>
+            </clipPath>
+          </defs>
+
+          <rect x="1" y="1" width="103" height="66" fill="none" stroke="#f3f4f6" stroke-width="0.42" />
+          <line x1="52.5" y1="1" x2="52.5" y2="67" stroke="#f3f4f6" stroke-width="0.38" />
+          <circle cx="52.5" cy="34" r="9.15" fill="none" stroke="#f3f4f6" stroke-width="0.38" />
+          <circle cx="52.5" cy="34" r="0.42" fill="#f3f4f6" />
+
+          <rect x="1" y="13.84" width="16.5" height="40.32" fill="none" stroke="#f3f4f6" stroke-width="0.38" />
+          <rect x="87.5" y="13.84" width="16.5" height="40.32" fill="none" stroke="#f3f4f6" stroke-width="0.38" />
+
+          <rect x="1" y="24.84" width="5.5" height="18.32" fill="none" stroke="#f3f4f6" stroke-width="0.38" />
+          <rect x="98.5" y="24.84" width="5.5" height="18.32" fill="none" stroke="#f3f4f6" stroke-width="0.38" />
+
+          <circle cx="12" cy="34" r="0.38" fill="#f3f4f6" />
+          <circle cx="93" cy="34" r="0.38" fill="#f3f4f6" />
+
+          <circle cx="12" cy="34" r="9.15" fill="none" stroke="#f3f4f6" stroke-width="0.38" clip-path="url(#leftArcClip)" />
+          <circle cx="93" cy="34" r="9.15" fill="none" stroke="#f3f4f6" stroke-width="0.38" clip-path="url(#rightArcClip)" />
+
+          <path d="M 1 3.2 A 2.2 2.2 0 0 0 3.2 1" fill="none" stroke="#f3f4f6" stroke-width="0.38" />
+          <path d="M 101.8 1 A 2.2 2.2 0 0 0 104 3.2" fill="none" stroke="#f3f4f6" stroke-width="0.38" />
+          <path d="M 1 64.8 A 2.2 2.2 0 0 1 3.2 67" fill="none" stroke="#f3f4f6" stroke-width="0.38" />
+          <path d="M 101.8 67 A 2.2 2.2 0 0 1 104 64.8" fill="none" stroke="#f3f4f6" stroke-width="0.38" />
+        </svg>
+
+        <svg class="draw-layer" id="drawLayer"></svg>
+      </div>
+    </section>
+  </div>
+
+  <div class="eraser-cursor" id="eraserCursor"></div>
+
+  <div class="modal" id="textModal">
+    <div class="modal-box">
+      <h3>Edit Player</h3>
+      <input type="text" id="playerTextInput" placeholder="Enter text" maxlength="12" />
+      <div class="modal-actions">
+        <button class="delete-btn" id="deletePlayer">Delete</button>
+        <button class="cancel-btn" id="cancelModal">Cancel</button>
+        <button class="save-btn" id="saveText">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const pitch = document.getElementById("pitch");
+    const navPenBtn = document.getElementById("navPen");
+    const navRectBtn = document.getElementById("navRect");
+    const navTriangleBtn = document.getElementById("navTriangle");
+    const navCircleShapeBtn = document.getElementById("navCircleShape");
+    const navShapeMenu = document.getElementById("navShapeMenu");
+    const shapeDropdown = document.getElementById("shapeDropdown");
+
+    const colorDropdown = document.getElementById("colorDropdown");
+    const navColorMenu = document.getElementById("navColorMenu");
+    const colorPreview = document.getElementById("colorPreview");
+    const colorSwatches = Array.from(document.querySelectorAll(".color-swatch"));
+
+    const navEraserBtn = document.getElementById("navEraser");
+    const eraserSizeInput = document.getElementById("eraserSize");
+    const eraserCursor = document.getElementById("eraserCursor");
+    const navAddTeam1Btn = document.getElementById("navAddTeam1");
+    const navAddTeam2Btn = document.getElementById("navAddTeam2");
+    const navAddBallBtn = document.getElementById("navAddBall");
+    const drawLayer = document.getElementById("drawLayer");
+
+    const resetDropdown = document.getElementById("resetDropdown");
+    const navResetMenu = document.getElementById("navResetMenu");
+    const navClearBoardBtn = document.getElementById("navClearBoard");
+    const navResetStartBtn = document.getElementById("navResetStart");
+
+    const modal = document.getElementById("textModal");
+    const playerTextInput = document.getElementById("playerTextInput");
+    const saveTextBtn = document.getElementById("saveText");
+    const cancelModalBtn = document.getElementById("cancelModal");
+    const deletePlayerBtn = document.getElementById("deletePlayer");
+
+    const formationLabels = [
+      "GK",
+      "RB", "CB", "CB", "LB",
+      "RCM", "DM", "LCM",
+      "RW", "SS", "LW"
+    ];
+
+    const formationLeft = [
+      { x: 8, y: 50 },
+      { x: 17, y: 20 },
+      { x: 17, y: 40 },
+      { x: 17, y: 60 },
+      { x: 17, y: 80 },
+      { x: 31, y: 30 },
+      { x: 28, y: 50 },
+      { x: 31, y: 70 },
+      { x: 43, y: 25 },
+      { x: 40, y: 50 },
+      { x: 43, y: 75 }
+    ];
+
+    const formationRight = [
+      { x: 92, y: 50 },
+      { x: 83, y: 20 },
+      { x: 83, y: 40 },
+      { x: 83, y: 60 },
+      { x: 83, y: 80 },
+      { x: 69, y: 30 },
+      { x: 72, y: 50 },
+      { x: 69, y: 70 },
+      { x: 57, y: 25 },
+      { x: 60, y: 50 },
+      { x: 57, y: 75 }
+    ];
+
+    let team1Count = 0;
+    let team2Count = 0;
+    let selectedPlayer = null;
+    let draggingPlayer = null;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+    let mouseDownX = 0;
+    let mouseDownY = 0;
+    let moved = false;
+
+    let isPenMode = false;
+    let isEraserMode = false;
+    let isDrawing = false;
+    let isErasing = false;
+    let currentPath = null;
+    let eraserRadius = 3;
+    let eraserHoldTimeout = null;
+
+    let activeShapeMode = null;
+    let isShapeDrawing = false;
+    let shapeStart = null;
+    let previewShape = null;
+
+    let selectedColor = "#111111";
+
+    function recountTeams() {
+      team1Count = document.querySelectorAll(".player.team1").length;
+      team2Count = document.querySelectorAll(".player.team2").length;
+    }
+
+    function setSelectedColor(color) {
+      selectedColor = color;
+      colorPreview.style.background = color;
+      colorSwatches.forEach((swatch) => {
+        swatch.classList.toggle("active", swatch.dataset.color === color);
+      });
+    }
+
+    function clearBoard() {
+      document.querySelectorAll(".player").forEach((player) => player.remove());
+      if (drawLayer) drawLayer.innerHTML = "";
+      team1Count = 0;
+      team2Count = 0;
+      closeModal();
+      normalEditMode();
+      clearPreviewShape();
+      isDrawing = false;
+      isErasing = false;
+      isShapeDrawing = false;
+      currentPath = null;
+      shapeStart = null;
+    }
+
+    function clearPreviewShape() {
+      if (previewShape && previewShape.parentNode) {
+        previewShape.remove();
+      }
+      previewShape = null;
+    }
+
+    function deactivateAllTools() {
+      isPenMode = false;
+      isEraserMode = false;
+      activeShapeMode = null;
+      navPenBtn.classList.remove("active");
+      navEraserBtn.classList.remove("active");
+      navShapeMenu.classList.remove("active");
+      updateDrawLayerActive();
+    }
+
+    function updateShapeMenuLabel() {
+      const shapeNames = {
+        rect: "Shape: Rectangle ▾",
+        triangle: "Shape: Triangle ▾",
+        circle: "Shape: Circle ▾"
+      };
+      navShapeMenu.textContent = shapeNames[activeShapeMode] || "Shape ▾";
+    }
+
+    function updateDrawLayerActive() {
+      const active = isPenMode || isEraserMode || !!activeShapeMode;
+      if (active) {
+        drawLayer.classList.add("pen-active");
+      } else {
+        drawLayer.classList.remove("pen-active");
+      }
+
+      if (!isEraserMode) {
+        eraserCursor.style.display = "none";
+      }
+    }
+
+    function eraseAt(x, y) {
+      const elements = Array.from(drawLayer.querySelectorAll("path, rect, circle, ellipse, polygon"));
+      elements.forEach((el) => {
+        if (el === previewShape) return;
+
+        const bbox = el.getBBox();
+        const withinBox =
+          x >= bbox.x - eraserRadius &&
+          x <= bbox.x + bbox.width + eraserRadius &&
+          y >= bbox.y - eraserRadius &&
+          y <= bbox.y + bbox.height + eraserRadius;
+
+        if (withinBox) {
+          el.remove();
+        }
+      });
+    }
+
+    navPenBtn.addEventListener("click", () => {
+      if (isPenMode) {
+        deactivateAllTools();
+        updateShapeMenuLabel();
+        return;
+      }
+      deactivateAllTools();
+      isPenMode = true;
+      navPenBtn.classList.add("active");
+      updateShapeMenuLabel();
+      updateDrawLayerActive();
+    });
+
+    navRectBtn.addEventListener("click", () => {
+      deactivateAllTools();
+      activeShapeMode = "rect";
+      navShapeMenu.classList.add("active");
+      updateShapeMenuLabel();
+      updateDrawLayerActive();
+      shapeDropdown.classList.remove("open");
+    });
+
+    navTriangleBtn.addEventListener("click", () => {
+      deactivateAllTools();
+      activeShapeMode = "triangle";
+      navShapeMenu.classList.add("active");
+      updateShapeMenuLabel();
+      updateDrawLayerActive();
+      shapeDropdown.classList.remove("open");
+    });
+
+    navCircleShapeBtn.addEventListener("click", () => {
+      deactivateAllTools();
+      activeShapeMode = "circle";
+      navShapeMenu.classList.add("active");
+      updateShapeMenuLabel();
+      updateDrawLayerActive();
+      shapeDropdown.classList.remove("open");
+    });
+
+    navShapeMenu.addEventListener("click", (e) => {
+      e.stopPropagation();
+      shapeDropdown.classList.toggle("open");
+      colorDropdown.classList.remove("open");
+      resetDropdown.classList.remove("open");
+    });
+
+    navColorMenu.addEventListener("click", (e) => {
+      e.stopPropagation();
+      colorDropdown.classList.toggle("open");
+      shapeDropdown.classList.remove("open");
+      resetDropdown.classList.remove("open");
+    });
+
+    colorSwatches.forEach((swatch) => {
+      swatch.addEventListener("click", () => {
+        setSelectedColor(swatch.dataset.color);
+        colorDropdown.classList.remove("open");
+      });
+    });
+
+    navEraserBtn.addEventListener("click", () => {
+      if (isEraserMode) {
+        deactivateAllTools();
+        updateShapeMenuLabel();
+        return;
+      }
+      deactivateAllTools();
+      isEraserMode = true;
+      navEraserBtn.classList.add("active");
+      updateShapeMenuLabel();
+      updateDrawLayerActive();
+      eraserCursor.style.display = "block";
+    });
+
+    navEraserBtn.addEventListener("mousedown", () => {
+      eraserHoldTimeout = setTimeout(() => {
+        eraserSizeInput.style.display = "inline-block";
+      }, 3000);
+    });
+
+    document.addEventListener("mouseup", () => {
+      if (eraserHoldTimeout) {
+        clearTimeout(eraserHoldTimeout);
+        eraserHoldTimeout = null;
+      }
+    });
+
+    eraserSizeInput.addEventListener("input", (e) => {
+      const value = Number(e.target.value);
+      if (!Number.isNaN(value)) {
+        eraserRadius = value;
+      }
+    });
+
+    drawLayer.setAttribute("viewBox", "0 0 105 68");
+    drawLayer.setAttribute("preserveAspectRatio", "none");
+
+    function getSvgCoords(e) {
+      const rect = pitch.getBoundingClientRect();
+      return {
+        x: ((e.clientX - rect.left) / rect.width) * 105,
+        y: ((e.clientY - rect.top) / rect.height) * 68,
+        pitchRect: rect
+      };
+    }
+
+    function createShapeElement(type) {
+      let el;
+      if (type === "rect") {
+        el = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      } else if (type === "triangle") {
+        el = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+      } else if (type === "circle") {
+        el = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+      }
+      el.setAttribute("fill", "none");
+      el.setAttribute("stroke", selectedColor);
+      el.setAttribute("stroke-width", "0.45");
+      el.setAttribute("stroke-linecap", "round");
+      el.setAttribute("stroke-linejoin", "round");
+      return el;
+    }
+
+    function updateShapeElement(el, type, startX, startY, endX, endY) {
+      const minX = Math.min(startX, endX);
+      const minY = Math.min(startY, endY);
+      const width = Math.abs(endX - startX);
+      const height = Math.abs(endY - startY);
+
+      if (type === "rect") {
+        el.setAttribute("x", minX);
+        el.setAttribute("y", minY);
+        el.setAttribute("width", width);
+        el.setAttribute("height", height);
+      } else if (type === "circle") {
+        el.setAttribute("cx", minX + width / 2);
+        el.setAttribute("cy", minY + height / 2);
+        el.setAttribute("rx", width / 2);
+        el.setAttribute("ry", height / 2);
+      } else if (type === "triangle") {
+        const topX = minX + width / 2;
+        const topY = minY;
+        const leftX = minX;
+        const leftY = minY + height;
+        const rightX = minX + width;
+        const rightY = minY + height;
+        el.setAttribute("points", `${topX},${topY} ${leftX},${leftY} ${rightX},${rightY}`);
+      }
+    }
+
+    drawLayer.addEventListener("mousedown", (e) => {
+      if (!isPenMode && !isEraserMode && !activeShapeMode) return;
+      e.preventDefault();
+
+      const { x, y } = getSvgCoords(e);
+
+      if (isPenMode) {
+        isDrawing = true;
+        currentPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        currentPath.setAttribute("fill", "none");
+        currentPath.setAttribute("stroke", selectedColor);
+        currentPath.setAttribute("stroke-width", "0.45");
+        currentPath.setAttribute("stroke-linecap", "round");
+        currentPath.setAttribute("stroke-linejoin", "round");
+        currentPath.setAttribute("d", `M ${x} ${y}`);
+        drawLayer.appendChild(currentPath);
+      } else if (isEraserMode) {
+        isErasing = true;
+        eraseAt(x, y);
+      } else if (activeShapeMode) {
+        isShapeDrawing = true;
+        shapeStart = { x, y };
+        clearPreviewShape();
+        previewShape = createShapeElement(activeShapeMode);
+        drawLayer.appendChild(previewShape);
+        updateShapeElement(previewShape, activeShapeMode, x, y, x, y);
+      }
+    });
+
+    document.addEventListener("mousemove", (e) => {
+      const { x, y, pitchRect } = getSvgCoords(e);
+
+      if (!isDrawing && !isErasing && !isShapeDrawing) {
+        if (isEraserMode) {
+          eraserCursor.style.display = "block";
+          eraserCursor.style.left = `${e.clientX}px`;
+          eraserCursor.style.top = `${e.clientY}px`;
+          const pixelRadius = (eraserRadius / 105) * pitchRect.width;
+          const diameterPx = pixelRadius * 2;
+          eraserCursor.style.width = `${diameterPx}px`;
+          eraserCursor.style.height = `${diameterPx}px`;
+        }
+        return;
+      }
+
+      if (isDrawing && currentPath) {
+        const d = currentPath.getAttribute("d");
+        currentPath.setAttribute("d", `${d} L ${x} ${y}`);
+      } else if (isErasing) {
+        eraseAt(x, y);
+      } else if (isShapeDrawing && previewShape && shapeStart) {
+        updateShapeElement(previewShape, activeShapeMode, shapeStart.x, shapeStart.y, x, y);
+      }
+
+      if (isEraserMode) {
+        eraserCursor.style.display = "block";
+        eraserCursor.style.left = `${e.clientX}px`;
+        eraserCursor.style.top = `${e.clientY}px`;
+        const pixelRadius = (eraserRadius / 105) * pitchRect.width;
+        const diameterPx = pixelRadius * 2;
+        eraserCursor.style.width = `${diameterPx}px`;
+        eraserCursor.style.height = `${diameterPx}px`;
+      }
+    });
+
+    document.addEventListener("mouseup", () => {
+      isDrawing = false;
+      isErasing = false;
+      currentPath = null;
+
+      if (isShapeDrawing) {
+        isShapeDrawing = false;
+        previewShape = null;
+        shapeStart = null;
+      }
+    });
+
+    function openModal(player) {
+      if (player.dataset.team === "ball") return;
+      selectedPlayer = player;
+      playerTextInput.value = player.dataset.label || "";
+      modal.classList.add("active");
+      playerTextInput.focus();
+    }
+
+    function closeModal() {
+      modal.classList.remove("active");
+      selectedPlayer = null;
+      playerTextInput.value = "";
+    }
+
+    function createPlayer(team, xPercent, yPercent, label = "") {
+      const rect = pitch.getBoundingClientRect();
+      const x = (xPercent / 100) * rect.width;
+      const y = (yPercent / 100) * rect.height;
+
+      const player = document.createElement("div");
+      player.className = `player ${team}`;
+      player.dataset.team = team;
+      player.dataset.label = label;
+      player.textContent = label;
+      player.style.left = `${x}px`;
+      player.style.top = `${y}px`;
+
+      enablePlayerActions(player);
+      pitch.appendChild(player);
+      recountTeams();
+    }
+
+    function createBall(xPercent = 50, yPercent = 50) {
+      const rect = pitch.getBoundingClientRect();
+      const x = (xPercent / 100) * rect.width;
+      const y = (yPercent / 100) * rect.height;
+
+      const player = document.createElement("div");
+      player.className = "player ball";
+      player.dataset.team = "ball";
+      player.dataset.label = "";
+      player.textContent = "";
+      player.style.left = `${x}px`;
+      player.style.top = `${y}px`;
+
+      enablePlayerActions(player);
+      pitch.appendChild(player);
+    }
+
+    function getNextMissingRole(team) {
+      const currentPlayers = Array.from(document.querySelectorAll(`.player.${team}`));
+      const currentLabels = currentPlayers.map(player => player.dataset.label || player.textContent || "");
+
+      for (let i = 0; i < formationLabels.length; i++) {
+        const label = formationLabels[i];
+        const currentCountForLabel = currentLabels.filter(item => item === label).length;
+        const neededCountForLabel = formationLabels.slice(0, i + 1).filter(item => item === label).length;
+
+        if (currentCountForLabel < neededCountForLabel) {
+          return { label, index: i };
+        }
+      }
+
+      return null;
+    }
+
+    function addOnePlayer(team) {
+      recountTeams();
+      const teamCount = team === "team1" ? team1Count : team2Count;
+      if (teamCount >= 11) return;
+
+      const nextRole = getNextMissingRole(team);
+      if (!nextRole) return;
+
+      const formation = team === "team1" ? formationLeft : formationRight;
+      const pos = formation[nextRole.index];
+      createPlayer(team, pos.x, pos.y, nextRole.label);
+    }
+
+    function initializeBoard() {
+      clearBoard();
+      while (document.querySelectorAll(".player.team1").length < 11) addOnePlayer("team1");
+      while (document.querySelectorAll(".player.team2").length < 11) addOnePlayer("team2");
+      createBall(50, 50);
+    }
+
+    navAddTeam1Btn.addEventListener("click", () => addOnePlayer("team1"));
+    navAddTeam2Btn.addEventListener("click", () => addOnePlayer("team2"));
+
+    navAddBallBtn.addEventListener("click", () => {
+      const existingBall = document.querySelector(".player.ball");
+      if (!existingBall) createBall(50, 50);
+    });
+
+    navResetMenu.addEventListener("click", (e) => {
+      e.stopPropagation();
+      resetDropdown.classList.toggle("open");
+      shapeDropdown.classList.remove("open");
+      colorDropdown.classList.remove("open");
+    });
+
+    navClearBoardBtn.addEventListener("click", () => {
+      clearBoard();
+      resetDropdown.classList.remove("open");
+    });
+
+    navResetStartBtn.addEventListener("click", () => {
+      initializeBoard();
+      resetDropdown.classList.remove("open");
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!resetDropdown.contains(e.target)) resetDropdown.classList.remove("open");
+      if (!shapeDropdown.contains(e.target)) shapeDropdown.classList.remove("open");
+      if (!colorDropdown.contains(e.target)) colorDropdown.classList.remove("open");
+    });
+
+    function enablePlayerActions(player) {
+      player.addEventListener("mousedown", (e) => {
+        if (isPenMode || isEraserMode || activeShapeMode) return;
+        e.preventDefault();
+        draggingPlayer = player;
+        moved = false;
+
+        mouseDownX = e.clientX;
+        mouseDownY = e.clientY;
+
+        const rect = player.getBoundingClientRect();
+        dragOffsetX = e.clientX - rect.left;
+        dragOffsetY = e.clientY - rect.top;
+      });
+
+      player.addEventListener("click", (e) => {
+        if (isPenMode || isEraserMode || activeShapeMode) return;
+        e.stopPropagation();
+        if (moved) return;
+
+        if (player.dataset.team === "ball") {
+          selectedPlayer = player;
+          deletePlayerOnlyMode();
+          return;
+        }
+
+        normalEditMode();
+        openModal(player);
+      });
+    }
+
+    function normalEditMode() {
+      playerTextInput.style.display = "block";
+      saveTextBtn.style.display = "inline-block";
+      document.querySelector(".modal-box h3").textContent = "Edit Player";
+    }
+
+    function deletePlayerOnlyMode() {
+      playerTextInput.style.display = "none";
+      saveTextBtn.style.display = "none";
+      document.querySelector(".modal-box h3").textContent = "Delete Ball";
+      modal.classList.add("active");
+    }
+
+    document.addEventListener("mousemove", (e) => {
+      if (!draggingPlayer) return;
+
+      const diffX = Math.abs(e.clientX - mouseDownX);
+      const diffY = Math.abs(e.clientY - mouseDownY);
+      if (diffX > 4 || diffY > 4) moved = true;
+
+      const pitchRect = pitch.getBoundingClientRect();
+
+      let x = e.clientX - pitchRect.left - dragOffsetX + draggingPlayer.offsetWidth / 2;
+      let y = e.clientY - pitchRect.top - dragOffsetY + draggingPlayer.offsetHeight / 2;
+
+      const halfW = draggingPlayer.offsetWidth / 2;
+      const halfH = draggingPlayer.offsetHeight / 2;
+
+      if (x < halfW) x = halfW;
+      if (y < halfH) y = halfH;
+      if (x > pitch.clientWidth - halfW) x = pitch.clientWidth - halfW;
+      if (y > pitch.clientHeight - halfH) y = pitch.clientHeight - halfH;
+
+      draggingPlayer.style.left = `${x}px`;
+      draggingPlayer.style.top = `${y}px`;
+    });
+
+    document.addEventListener("mouseup", () => {
+      if (draggingPlayer) {
+        setTimeout(() => {
+          draggingPlayer = null;
+        }, 0);
+      }
+    });
+
+    saveTextBtn.addEventListener("click", () => {
+      if (!selectedPlayer) return;
+      const value = playerTextInput.value.trim();
+      selectedPlayer.textContent = value || selectedPlayer.dataset.label || "";
+      selectedPlayer.dataset.label = value || selectedPlayer.dataset.label || "";
+      closeModal();
+    });
+
+    deletePlayerBtn.addEventListener("click", () => {
+      if (!selectedPlayer) return;
+      selectedPlayer.remove();
+      recountTeams();
+      closeModal();
+      normalEditMode();
+    });
+
+    cancelModalBtn.addEventListener("click", () => {
+      closeModal();
+      normalEditMode();
+    });
+
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        closeModal();
+        normalEditMode();
+      }
+    });
+
+    setSelectedColor("#111111");
+    updateShapeMenuLabel();
+    initializeBoard();
+  </script>
+</body>
+</html>
